@@ -4,4 +4,4 @@ __author__ = 'Paul'
 
 from scrapy import cmdline
 
-cmdline.execute("scrapy crawl {spider name}".split())
+cmdline.execute("scrapy crawl ohr".split())

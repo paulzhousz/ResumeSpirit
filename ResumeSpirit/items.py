@@ -7,8 +7,21 @@
 
 import scrapy
 
+sourceDict = {
+    '0': 'OHR',
+    '1': '51Job'}
 
-class ResumespiritItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
-    pass
+
+class PositionItem(scrapy.Item):
+    pid = scrapy.Field()
+    name = scrapy.Field()
+    start_date = scrapy.Field()
+    End_date = scrapy.Field()
+    status = scrapy.Field()
+    source = scrapy.Field()
+
+
+class ResumeItem(scrapy.Item):
+    rid = scrapy.Field()
+    name = scrapy.Field()
+    sex = scrapy.Field()

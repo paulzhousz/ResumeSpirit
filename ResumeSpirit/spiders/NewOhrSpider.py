@@ -29,12 +29,18 @@ class NewOhrSpider(Spider):
     def __init__(self, ohr_username="天臣国际", ohr_pwd="123456", *args, **kwargs):
         super(NewOhrSpider, self).__init__(*args, **kwargs)
 
-        # 定义
+        # 定义登录页面 POST Form Data
         self.login_formdata = {
-            'company': "1",
-            'username': ohr_username,
-            'password': ohr_pwd,
-            'captcha': ""
+            "company": "1",
+            "username": ohr_username,
+            "password": ohr_pwd,
+            "captcha": ""
+        }
+        # 定义职位列表页面 POST Form Data
+        # s=1:当前生效职位
+        # s=100:所有发布职位
+        self.position_formdata = {
+            "s": "1",
         }
         self.headers = {
             "Host": "new.o-hr.cn",
@@ -56,7 +62,7 @@ class NewOhrSpider(Spider):
             callback=self.post_login,
             method='POST',
             headers=self.headers,
-            formdata=self.formdata,
+            formdata=self.login_formdata,
         )
 
     def post_login(self, response):
@@ -65,13 +71,6 @@ class NewOhrSpider(Spider):
 
         # 返回SUCCESS，登录成功
         if data['result'] == "SUCCESS":
-            yield FormRequest(
-                self.position_url,
-                meta={"cookiejar": 1},
-                callback=self.post_login,
-                method='POST',
-                headers=self.headers,
-                formdata=self.formdata,
-            )
+            self.log("login success!")
         else:
             self.log("login failed!", level=logging.ERROR)

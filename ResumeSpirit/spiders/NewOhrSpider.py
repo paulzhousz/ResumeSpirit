@@ -9,9 +9,9 @@ __author__ = 'Paul'
 ******************************************************************************
 '''
 
+import json, logging
 from scrapy.spiders import CrawlSpider, Rule, Spider
 from scrapy.selector import Selector
-import json, logging
 from scrapy.http import Request, FormRequest
 
 
@@ -56,21 +56,36 @@ class NewOhrSpider(Spider):
     def start_requests(self):
         self.log(self.login_formdata)
         # 模拟用户登录
-        yield FormRequest(
+        return [FormRequest(
             self.login_url,
             meta={"cookiejar": 1},
             callback=self.post_login,
-            method='POST',
+            method="POST",
             headers=self.headers,
             formdata=self.login_formdata,
-        )
+        )]
 
     def post_login(self, response):
-        data = json.loads(response.body)
-        self.log("result=" + data['result'])
+        login_data = json.loads(response.body)
+        self.log("login result=" + login_data['result'])
 
         # 返回SUCCESS，登录成功
-        if data['result'] == "SUCCESS":
+        if login_data['result'] == "SUCCESS":
             self.log("login success!")
+            return [FormRequest(
+                self.position_url,
+                meta={"cookiejar": response.meta["cookiejar"]},
+                callback=self.parse_positionlist,
+                method="POST",
+                headers=self.headers,
+                formdata=self.position_formdata,
+            )]
         else:
             self.log("login failed!", level=logging.ERROR)
+
+    # 处理返回的职位列表json数据
+    def parse_positionlist(self, response):
+        positon_data = json.loads(response.body)
+        self.log("get position list result=" + positon_data['result'])
+        if positon_data['result'] == "SUCCESS":
+            self.log(positon_data["data"])

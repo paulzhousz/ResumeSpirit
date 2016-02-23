@@ -9,15 +9,19 @@ __author__ = 'Paul'
 ******************************************************************************
 '''
 
-import json, logging
-from scrapy.spiders import CrawlSpider, Rule, Spider
-from scrapy.selector import Selector
-from scrapy.http import Request, FormRequest
+import json
+import logging
+import scrapy
+
+from scrapy.spiders import Spider
+from scrapy.http import FormRequest
+from scrapy import Selector
 
 
 class NewOhrSpider(Spider):
     login_url = "http://new.o-hr.cn/user/ajax/ajaxLogin"
-    position_url = "http://new.o-hr.cn/user/job/ajaxGetJobs"
+    position_list_url = "http://new.o-hr.cn/user/job/ajaxGetJobs"
+    position_detail_url_prefix = "http://new.o-hr.cn/jobs/detail/"
     name = "newohr"
     allowed_domains = ["new.o-hr.cn"]
 
@@ -28,7 +32,6 @@ class NewOhrSpider(Spider):
 
     def __init__(self, ohr_username="天臣国际", ohr_pwd="123456", *args, **kwargs):
         super(NewOhrSpider, self).__init__(*args, **kwargs)
-
         # 定义登录页面 POST Form Data
         self.login_formdata = {
             "company": "1",
@@ -73,7 +76,7 @@ class NewOhrSpider(Spider):
         if login_data['result'] == "SUCCESS":
             self.log("login success!")
             return [FormRequest(
-                self.position_url,
+                self.position_list_url,
                 meta={"cookiejar": response.meta["cookiejar"]},
                 callback=self.parse_positionlist,
                 method="POST",
@@ -88,4 +91,35 @@ class NewOhrSpider(Spider):
         positon_data = json.loads(response.body)
         self.log("get position list result=" + positon_data['result'])
         if positon_data['result'] == "SUCCESS":
-            self.log(positon_data["data"])
+            # self.log(positon_data["data"])
+            sel = Selector(text=positon_data["data"])
+            # 处理第一页的职位信息url
+            positonid_list = sel.xpath('//a[contains(@href,"/jobs/detail")]/@href').re(r'\d+')
+            self.log(positonid_list)
+            for position_id in positonid_list:
+                position_data_url = self.position_detail_url_prefix + position_id
+                yield FormRequest(
+                    position_data_url,
+                    meta={"cookiejar": response.meta["cookiejar"]},
+                    callback=self.parse_positiondata,
+                    headers=self.headers,
+                )
+            self.log("complete!")
+
+    def parse_positiondata(self, response):
+        sel = Selector(response)
+        positon_name = sel.xpath('//div[@class="title"]/text()').extract()
+        # self.log("position name:"+positon_name[0])
+        self._log_page(response, positon_name[0] + ".html")
+
+    # 从返回的html中获取数据页数
+    # 如果发生异常，返回-1
+    def get_pageNumber(self, responsebody):
+        try:
+            selector_text = Selector(text=responsebody)
+            page_num_str = selector_text.xpath('//a[@class="mr10 ls1"]/text()').re(r'\d+')[0]
+            page_num = int(page_num_str)
+        except Exception:
+            page_num = -1
+        finally:
+            return page_num

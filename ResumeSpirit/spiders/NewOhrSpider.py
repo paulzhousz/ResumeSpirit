@@ -94,7 +94,9 @@ class NewOhrSpider(Spider):
         if positon_data['result'] == "SUCCESS":
             # self.log(positon_data["data"])
             sel = Selector(text=positon_data["data"])
-            # 处理第一页的职位信息url
+            #: 获取职位列表页数
+            page_number = self.get_pageNumber(sel)
+            #:处理第一页的职位信息url
             positonid_list = sel.xpath('//a[contains(@href,"/jobs/detail")]/@href').re(r'\d+')
             self.log(positonid_list)
             for position_id in positonid_list:
@@ -105,6 +107,8 @@ class NewOhrSpider(Spider):
                     callback=self.parse_positiondata,
                     headers=self.headers,
                 )
+            if page_number>1:
+
             self.log("complete!")
 
     def parse_positiondata(self, response):
@@ -113,12 +117,12 @@ class NewOhrSpider(Spider):
         # self.log("position name:"+positon_name[0])
         self._log_page(response, positon_name[0] + ".html")
 
-    # 从返回的html中获取数据页数
-    # 如果发生异常，返回-1
-    def get_pageNumber(self, responsebody):
+    #: 从返回的html中获取数据页数
+    #: 如果发生异常，返回-1
+    #: selector:Selector实例
+    def get_pageNumber(self, selector):
         try:
-            selector_text = Selector(text=responsebody)
-            page_num_str = selector_text.xpath('//a[@class="mr10 ls1"]/text()').re(r'\d+')[0]
+            page_num_str = selector.xpath('//a[@class="mr10 ls1"]/text()').re(r'\d+')[0]
             page_num = int(page_num_str)
         except Exception:
             page_num = -1

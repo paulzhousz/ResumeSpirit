@@ -12,6 +12,7 @@ __author__ = 'Paul'
 import json
 import logging
 import scrapy
+import uuid
 
 from scrapy.spiders import Spider
 from scrapy.http import FormRequest

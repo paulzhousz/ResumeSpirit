@@ -17,6 +17,7 @@ import uuid
 from scrapy.spiders import Spider
 from scrapy.http import FormRequest
 from scrapy import Selector
+from ResumeSpirit.items import PositionItem
 
 
 class NewOhrSpider(Spider):
@@ -41,10 +42,14 @@ class NewOhrSpider(Spider):
             "captcha": ""
         }
         # 定义职位列表页面 POST Form Data
-        # s=1:当前生效职位
-        # s=100:所有发布职位
+        #: s=1:当前生效职位
+        #: s=100:所有发布职位
+        #: c_page:当前页
+        #: t_page:下一页页数
         self.position_formdata = {
             "s": "1",
+            "c_page": "0",
+            "t_page": "1",
         }
         self.headers = {
             "Host": "new.o-hr.cn",
@@ -95,21 +100,35 @@ class NewOhrSpider(Spider):
             # self.log(positon_data["data"])
             sel = Selector(text=positon_data["data"])
             #: 获取职位列表页数
-            page_number = self.get_pageNumber(sel)
+            position_page_number = self.get_pageNumber(sel)
             #:处理第一页的职位信息url
             positonid_list = sel.xpath('//a[contains(@href,"/jobs/detail")]/@href').re(r'\d+')
             self.log(positonid_list)
-            for position_id in positonid_list:
-                position_data_url = self.position_detail_url_prefix + position_id
+            for position_code in positonid_list:
+                position_data_url = self.position_detail_url_prefix + position_code
                 yield FormRequest(
                     position_data_url,
-                    meta={"cookiejar": response.meta["cookiejar"]},
+                    meta={
+                        "cookiejar": response.meta["cookiejar"],
+                        "position_code": position_code,
+                    },
                     callback=self.parse_positiondata,
                     headers=self.headers,
                 )
-            if page_number>1:
-
-            self.log("complete!")
+            #: 处理下一页数据
+            if position_page_number > 1:
+                for cpage in range(1, position_page_number):
+                    self.position_formdata["c_page"] = str(cpage)
+                    self.position_formdata["t_page"] = str(cpage + 1)
+                    yield FormRequest(
+                        self.position_list_url,
+                        meta={"cookiejar": response.meta["cookiejar"]},
+                        callback=self.parse_positionlist,
+                        method="POST",
+                        headers=self.headers,
+                        formdata=self.position_formdata,
+                    )
+                    # self.log("complete!")
 
     def parse_positiondata(self, response):
         sel = Selector(response)

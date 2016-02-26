@@ -13,12 +13,28 @@ sourceDict = {
 
 
 class PositionItem(scrapy.Item):
-    pid = scrapy.Field()
-    name = scrapy.Field()
-    start_date = scrapy.Field()
-    End_date = scrapy.Field()
-    status = scrapy.Field()
+    positionid = scrapy.Field()
+    positionname = scrapy.Field()
+    hiringnumber = scrapy.Field()
+    location = scrapy.Field()
+    workingtime = scrapy.Field()
+    degree = scrapy.Field()
+    sex = scrapy.Field()
+    language = scrapy.Field()
+    languagelevel = scrapy.Field()
+    agefrom = scrapy.Field()
+    ageto = scrapy.Field()
+    experience = scrapy.Field()
+    category = scrapy.Field()
+    major = scrapy.Field()
+    salary = scrapy.Field()
+    positiondesc = scrapy.Field()
+    enddate = scrapy.Field()
     source = scrapy.Field()
+    sourcepositionid = scrapy.Field()
+    status = scrapy.Field()
+    createdate = scrapy.Field()
+    updatedate = scrapy.Field()
 
 
 class ResumeItem(scrapy.Item):

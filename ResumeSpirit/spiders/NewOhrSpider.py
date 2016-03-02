@@ -133,8 +133,7 @@ class NewOhrSpider(Spider):
     def parse_positiondata(self, response):
         sel = Selector(response)
         positon_name = sel.xpath('//div[@class="title"]/text()').extract()
-        # self.log("position name:"+positon_name[0])
-        self._log_page(response, positon_name[0] + ".html")
+        self.log("position name:" + positon_name[0])
 
     #: 从返回的html中获取数据页数
     #: 如果发生异常，返回-1

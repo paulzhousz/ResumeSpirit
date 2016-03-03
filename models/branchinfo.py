@@ -11,7 +11,7 @@ Base = declarative_base()
 class BranchInfo(Base):
     __tablename__ = "t_branchinfo"
 
-    branchid = Column(String(50))
+    branchid = Column(String(50), primary_key=True)
     cname = Column(String(100))
     ename = Column(String(100))
     createdate = Column(String(30))

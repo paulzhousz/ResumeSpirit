@@ -10,7 +10,7 @@ Base = declarative_base()
 
 class ResumeInfo(Base):
     __tablename__ = "t_resumeinfo"
-    resumeid = Column(String(50))
+    resumeid = Column(String(50), primary_key=True)
     cname = Column(String(20))
     ename = Column(String(20))
     sex = Column(String(10))

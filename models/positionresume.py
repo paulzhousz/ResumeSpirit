@@ -11,7 +11,7 @@ Base = declarative_base()
 class PositionResume(Base):
     __tablename__ = "t_positionresume"
 
-    id = Column(String(50))
+    id = Column(String(50), primary_key=True)
     positionid = Column(String(50))
     resumeid = Column(String(50))
     createdate = Column(String(30))

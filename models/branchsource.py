@@ -11,7 +11,7 @@ Base = declarative_base()
 class BranchSource(Base):
     __tablename__ = "t_branchsource"
 
-    branchsourceid = Column(String(50))
+    branchsourceid = Column(String(50), primary_key=True)
     branchid = Column(String(50))
     sourceid = Column(String(50))
     companyname = Column(String(50))

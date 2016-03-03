@@ -10,7 +10,7 @@ Base = declarative_base()
 
 class UserInfo(Base):
     __tablename__ = "t_userinfo"
-    userid = Column(String(50))
+    userid = Column(String(50), primary_key=True)
     loginname = Column(String(20))
     username = Column(String(20))
     passwordset = Column(String(100))

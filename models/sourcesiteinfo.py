@@ -11,7 +11,7 @@ Base = declarative_base()
 class SourcesiteInfo(Base):
     __tablename__ = "t_sourcesiteinfo"
 
-    sourceid = Column(String(50))
+    sourceid = Column(String(50), primary_key=True)
     code = Column(String(20))
     name = Column(String(50))
     createdate = Column(String(30))

@@ -33,6 +33,11 @@ class PositionItem(scrapy.Item):
     source = scrapy.Field()
     sourcepositionid = scrapy.Field()
     status = scrapy.Field()
+    branchid = scrapy.Field()
+    reportto = scrapy.Field()
+    managecount = scrapy.Field()
+    department = scrapy.Field()
+    sourceurl = scrapy.Field()
     createdate = scrapy.Field()
     updatedate = scrapy.Field()
 

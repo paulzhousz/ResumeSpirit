@@ -38,6 +38,7 @@ class PositionItem(scrapy.Item):
     managecount = scrapy.Field()
     department = scrapy.Field()
     sourceurl = scrapy.Field()
+    resumes = scrapy.Field()
     createdate = scrapy.Field()
     updatedate = scrapy.Field()
 

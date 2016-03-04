@@ -21,7 +21,7 @@ from ResumeSpirit.items import PositionItem
 class NewOhrSpider(Spider):
     login_url = "http://new.o-hr.cn/user/ajax/ajaxLogin"
     position_list_url = "http://new.o-hr.cn/user/job/ajaxGetJobs"
-    position_detail_url_prefix = "http://new.o-hr.cn/user/job/index/"
+    position_detail_url_prefix = "http://new.o-hr.cn/jobs/detail/"
     name = "newohr"
     allowed_domains = ["new.o-hr.cn"]
 
@@ -107,6 +107,7 @@ class NewOhrSpider(Spider):
                 position_data_url = self.position_detail_url_prefix + position_code
                 item = PositionItem()
                 item["sourcepositionid"] = position_code
+                item["resumes"] = []
                 yield FormRequest(
                     position_data_url,
                     meta={
@@ -135,18 +136,26 @@ class NewOhrSpider(Spider):
         sel = Selector(response)
         item = response.meta["position_item"]
         #: 职位名称
-        position_name = sel.xpath('//input[@name="title"]/@value').extract_first(default="")
-        # self.log(positon_name[0].encode("gb2312"))
+        position_name = sel.xpath('//div[@class="title"]/text()').extract_first(default="")
+        # self.log(position_name)
+        item["positionname"] = position_name.strip()
+        # self._log_page(response, position_name + ".html")
 
-        item["positionname"] = position_name
-        self._log_page(response,position_name+".html")
-        #: 招聘人数
-        hiringnumber = sel.xpath('//input[@name="posnum"]/@value').extract_first(default=u"不限")
-        # self.log(hiringnumber[0])
-        item["hiringnumber"] = hiringnumber
-        #: 工作地点
-        location = sel.xpath('//div[@class="popoption-holder"]').extract_first(default='not-found')
-        self.log(location)
+        #: 薪资信息
+        salary = sel.xpath('//div[@class="salary"]/text()').extract_first(default="")
+        # self.log(salary)
+        item["salary"] = salary.strip()
+
+        #: 工作地点&工作经验
+        text = sel.xpath('//div[@class="location"]/text()').extract()
+        location=text[0].strip() if text[0] else ""
+        experience=text[1].strip() if text[0] else ""
+        self.log(location+"-"+experience)
+        item["location"] = location
+        item["experience"]=experience
+
+        #: 截止时间
+
 
     #: get_pageNumber(self, selector):
     #: 从返回的html中获取数据页数

@@ -11,8 +11,6 @@ __author__ = 'Paul'
 
 import json
 import logging
-import scrapy
-import uuid
 
 from scrapy.spiders import Spider
 from scrapy.http import FormRequest
@@ -23,7 +21,7 @@ from ResumeSpirit.items import PositionItem
 class NewOhrSpider(Spider):
     login_url = "http://new.o-hr.cn/user/ajax/ajaxLogin"
     position_list_url = "http://new.o-hr.cn/user/job/ajaxGetJobs"
-    position_detail_url_prefix = "http://new.o-hr.cn/jobs/detail/"
+    position_detail_url_prefix = "http://new.o-hr.cn/user/job/index/"
     name = "newohr"
     allowed_domains = ["new.o-hr.cn"]
 
@@ -92,7 +90,8 @@ class NewOhrSpider(Spider):
         else:
             self.log("login failed!", level=logging.ERROR)
 
-    # 处理返回的职位列表json数据
+    #: parse_positionlist(self, response):
+    #: 处理返回的职位列表json数据
     def parse_positionlist(self, response):
         positon_data = json.loads(response.body)
         self.log("get position list result=" + positon_data['result'])
@@ -101,16 +100,18 @@ class NewOhrSpider(Spider):
             sel = Selector(text=positon_data["data"])
             #: 获取职位列表页数
             position_page_number = self.get_pageNumber(sel)
-            #:处理第一页的职位信息url
-            positonid_list = sel.xpath('//a[contains(@href,"/jobs/detail")]/@href').re(r'\d+')
+            #: 处理第一页的职位信息url
+            positonid_list = sel.xpath('//a[contains(@href,"/job/index/")]/@href').re(r'\d+')
             self.log(positonid_list)
             for position_code in positonid_list:
                 position_data_url = self.position_detail_url_prefix + position_code
+                item = PositionItem()
+                item["sourcepositionid"] = position_code
                 yield FormRequest(
                     position_data_url,
                     meta={
                         "cookiejar": response.meta["cookiejar"],
-                        "position_code": position_code,
+                        "position_item": item,
                     },
                     callback=self.parse_positiondata,
                     headers=self.headers,
@@ -132,15 +133,28 @@ class NewOhrSpider(Spider):
 
     def parse_positiondata(self, response):
         sel = Selector(response)
-        positon_name = sel.xpath('//div[@class="title"]/text()').extract()
-        self.log("position name:" + positon_name[0])
+        item = response.meta["position_item"]
+        #: 职位名称
+        position_name = sel.xpath('//input[@name="title"]/@value').extract_first(default="")
+        # self.log(positon_name[0].encode("gb2312"))
 
+        item["positionname"] = position_name
+        self._log_page(response,position_name+".html")
+        #: 招聘人数
+        hiringnumber = sel.xpath('//input[@name="posnum"]/@value').extract_first(default=u"不限")
+        # self.log(hiringnumber[0])
+        item["hiringnumber"] = hiringnumber
+        #: 工作地点
+        location = sel.xpath('//div[@class="popoption-holder"]').extract_first(default='not-found')
+        self.log(location)
+
+    #: get_pageNumber(self, selector):
     #: 从返回的html中获取数据页数
     #: 如果发生异常，返回-1
     #: selector:Selector实例
     def get_pageNumber(self, selector):
         try:
-            page_num_str = selector.xpath('//a[@class="mr10 ls1"]/text()').re(r'\d+')[0]
+            page_num_str = selector.xpath('//a[@class="mr10 ls1"]/value()').re(r'\d+')[0]
             page_num = int(page_num_str)
         except Exception:
             page_num = -1

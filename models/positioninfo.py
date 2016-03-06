@@ -8,7 +8,7 @@ from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()
 
 
-class Position(Base):
+class PositionInfo(Base):
     __tablename__ = "T_PositionInfo"
 
     positionID = Column(String(50), primary_key=True)

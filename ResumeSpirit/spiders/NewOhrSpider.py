@@ -12,12 +12,14 @@ __author__ = 'Paul'
 
 import json
 import logging
+
 import re
 
 from scrapy.spiders import Spider
 from scrapy.http import FormRequest
 from scrapy import Selector
-from ResumeSpirit.items import PositionItem
+
+from ResumeSpirit.items import PositionItem, ResumeItem
 
 
 class NewOhrSpider(Spider):
@@ -228,7 +230,9 @@ class NewOhrSpider(Spider):
                 item["sex"] = info
             #: 语言要求
             elif label.find(u"语言要求") != -1:
-                infol = info.split(" ")
+                #: 使用空格分隔语言和等级
+                infol = info.split("\t")
+                # self.log(infol)
                 item["language"] = infol[0]
                 item["languagelevel"] = infol[1]
             #: 专业要求
@@ -240,6 +244,7 @@ class NewOhrSpider(Spider):
                 item["agefrom"] = infol[0]
                 item["ageto"] = infol[1]
             i += 1
+            self.log(item)
 
     #: get_pageNumber(self, selector):
     #: 从返回的html中获取数据页数

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 __author__ = 'Paul'
 
 '''
@@ -11,6 +12,7 @@ __author__ = 'Paul'
 
 import json
 import logging
+import re
 
 from scrapy.spiders import Spider
 from scrapy.http import FormRequest
@@ -107,6 +109,7 @@ class NewOhrSpider(Spider):
                 position_data_url = self.position_detail_url_prefix + position_code
                 item = PositionItem()
                 item["sourcepositionid"] = position_code
+                item["source"] = "OHR"
                 item["resumes"] = []
                 yield FormRequest(
                     position_data_url,
@@ -148,14 +151,95 @@ class NewOhrSpider(Spider):
 
         #: 工作地点&工作经验
         text = sel.xpath('//div[@class="location"]/text()').extract()
-        location=text[0].strip() if text[0] else ""
-        experience=text[1].strip() if text[0] else ""
-        self.log(location+"-"+experience)
+        location = text[0].strip() if text[0] else ""
+        experience = text[1].strip() if text[1] else ""
+        exp = re.sub(r'\D+', "", experience)
+        if exp == "":
+            exp = "0"
         item["location"] = location
-        item["experience"]=experience
+        item["experience"] = exp
 
         #: 截止时间
+        text = sel.xpath('//div[@class="posttime"]/text()').extract_first(default="")
+        if text != "":
+            enddate = text.strip()[-10:]
+        else:
+            enddate = ""
+        # self.log(enddate)
+        item["enddate"] = enddate
 
+        basic_info = sel.xpath('//div[@class="basic-info info-group"]/ul/li/text()').extract()
+        #: 职位类别
+        try:
+            item["category"] = basic_info[0]
+        except Exception:
+            item["category"] = ""
+
+        #: 工作性质
+        try:
+            item["workingtime"] = basic_info[1]
+        except Exception:
+            item["workingtime"] = ""
+
+        #: 招聘人数
+        try:
+            item["hiringnumber"] = basic_info[2]
+        except Exception:
+            item["hiringnumber"] = ""
+
+        #: 所属部门
+        try:
+            item["department"] = basic_info[3]
+        except Exception:
+            item["department"] = ""
+
+        #: 汇报对象
+        try:
+            item["reportto"] = basic_info[4]
+        except Exception:
+            item["reportto"] = ""
+
+        #: 下属人数
+        try:
+            item["managecount"] = basic_info[5]
+        except Exception:
+            item["managecount"] = ""
+
+        #: 岗位要求
+        positiondesc = sel.xpath('//li[@class="long"]/text()').extract()
+        desc = ""
+        for p in positiondesc:
+            desc = desc + p
+        # self.log(desc)
+        item["positiondesc"] = desc
+
+        require_label = sel.xpath('//div[@class="required-info info-group"]/ul/li/label/text()').extract()
+        require_info = sel.xpath('//div[@class="required-info info-group"]/ul/li/text()').extract()
+
+        i = 0
+        while i < len(require_label):
+            label = require_label[i]
+            info = require_info[i]
+            #: 学历要求
+            if label.find(u"学历要求") != -1:
+                item["degree"] = info
+            #: 性别要求
+            elif label.find(u"性别要求") != -1:
+                item["sex"] = info
+            #: 语言要求
+            elif label.find(u"语言要求") != -1:
+                infol = info.split(" ")
+                item["language"] = infol[0]
+                item["languagelevel"] = infol[1]
+            #: 专业要求
+            elif label.find(u"专业要求") != -1:
+                item["major"] = info
+            #: 年龄要求
+            elif label.find(u"年龄要求") != -1:
+                infol = re.findall(r'\d+', info)
+                item["agefrom"] = infol[0]
+                item["ageto"] = infol[1]
+            i += 1
 
     #: get_pageNumber(self, selector):
     #: 从返回的html中获取数据页数

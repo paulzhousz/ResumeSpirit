@@ -43,6 +43,7 @@ class PositionItem(scrapy.Item):
     updatedate = scrapy.Field()
 
 
+
 class ResumeItem(scrapy.Item):
     rid = scrapy.Field()
     name = scrapy.Field()

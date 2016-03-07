@@ -30,6 +30,7 @@ class PositionInfo(Base):
     enddate = Column(String(20))
     source = Column(String(20))
     sourcepositionid = Column(String(50))
+    sourceurl = Column(String(200))
     status = Column(String(10))
     branchid = Column(String(50))
     createdate = Column(String(30))

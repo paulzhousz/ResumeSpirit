@@ -34,8 +34,9 @@ class NewOhrSpider(Spider):
         with open(filename, 'w') as f:
             f.write("%s\n%s\n%s\n" % (response.url, response.headers, response.body))
 
-    def __init__(self, ohr_username="天臣国际", ohr_pwd="123456", *args, **kwargs):
+    def __init__(self, branch_id="1", ohr_username="天臣国际", ohr_pwd="123456", *args, **kwargs):
         super(NewOhrSpider, self).__init__(*args, **kwargs)
+        self.branch_id = branch_id
         # 定义登录页面 POST Form Data
         self.login_formdata = {
             "company": "1",
@@ -78,7 +79,7 @@ class NewOhrSpider(Spider):
 
     def post_login(self, response):
         login_data = json.loads(response.body)
-        self.log("login result=" + login_data['result'])
+        # self.log("login result=" + login_data['result'])
 
         # 返回SUCCESS，登录成功
         if login_data['result'] == "SUCCESS":
@@ -98,7 +99,7 @@ class NewOhrSpider(Spider):
     #: 处理返回的职位列表json数据
     def parse_positionlist(self, response):
         positon_data = json.loads(response.body)
-        self.log("get position list result=" + positon_data['result'])
+        #self.log("get position list result=" + positon_data['result'])
         if positon_data['result'] == "SUCCESS":
             # self.log(positon_data["data"])
             sel = Selector(text=positon_data["data"])
@@ -111,7 +112,32 @@ class NewOhrSpider(Spider):
                 position_data_url = self.position_detail_url_prefix + position_code
                 item = PositionItem()
                 item["sourcepositionid"] = position_code
+                item["branchid"] = self.branch_id
+                item["status"] = "1"
                 item["source"] = "OHR"
+                item["positionid"] = ""
+                item["positionname"] = ""
+                item["hiringnumber"] = ""
+                item["location"] = ""
+                item["workingtime"] = ""
+                item["degree"] = ""
+                item["sex"] = ""
+                item["language"] = ""
+                item["languagelevel"] = ""
+                item["agefrom"] = ""
+                item["ageto"] = ""
+                item["experience"] = ""
+                item["category"] = ""
+                item["major"] = ""
+                item["salary"] = ""
+                item["positiondesc"] = ""
+                item["enddate"] = ""
+                item["reportto"] = ""
+                item["managecount"] = ""
+                item["department"] = ""
+                item["sourceurl"] = ""
+                item["createdate"] = ""
+                item["updatedate"] = ""
                 item["resumes"] = []
                 yield FormRequest(
                     position_data_url,
@@ -140,6 +166,7 @@ class NewOhrSpider(Spider):
     def parse_positiondata(self, response):
         sel = Selector(response)
         item = response.meta["position_item"]
+        item["sourceurl"] = response.url
         #: 职位名称
         position_name = sel.xpath('//div[@class="title"]/text()').extract_first(default="")
         # self.log(position_name)
@@ -217,11 +244,15 @@ class NewOhrSpider(Spider):
 
         require_label = sel.xpath('//div[@class="required-info info-group"]/ul/li/label/text()').extract()
         require_info = sel.xpath('//div[@class="required-info info-group"]/ul/li/text()').extract()
-
+        # self.log(item["sourcepositionid"])
+        # self.log(require_label)
+        # self.log(require_info)
         i = 0
         while i < len(require_label):
             label = require_label[i]
             info = require_info[i]
+            # self.log(item["sourcepositionid"]+"-"+label)
+            # self.log(item["sourcepositionid"]+"-"+info)
             #: 学历要求
             if label.find(u"学历要求") != -1:
                 item["degree"] = info
@@ -244,7 +275,8 @@ class NewOhrSpider(Spider):
                 item["agefrom"] = infol[0]
                 item["ageto"] = infol[1]
             i += 1
-            self.log(item)
+        # self.log(item)
+        yield item
 
     #: get_pageNumber(self, selector):
     #: 从返回的html中获取数据页数

@@ -26,6 +26,7 @@ class NewOhrSpider(Spider):
     login_url = "http://new.o-hr.cn/user/ajax/ajaxLogin"
     position_list_url = "http://new.o-hr.cn/user/job/ajaxGetJobs"
     position_detail_url_prefix = "http://new.o-hr.cn/jobs/detail/"
+    resume_list_url=""
     name = "newohr"
     allowed_domains = ["new.o-hr.cn"]
 
@@ -165,18 +166,18 @@ class NewOhrSpider(Spider):
 
     def parse_positiondata(self, response):
         sel = Selector(response)
-        item = response.meta["position_item"]
-        item["sourceurl"] = response.url
+        positionitem = response.meta["position_item"]
+        positionitem["sourceurl"] = response.url
         #: 职位名称
         position_name = sel.xpath('//div[@class="title"]/text()').extract_first(default="")
         # self.log(position_name)
-        item["positionname"] = position_name.strip()
+        positionitem["positionname"] = position_name.strip()
         # self._log_page(response, position_name + ".html")
 
         #: 薪资信息
         salary = sel.xpath('//div[@class="salary"]/text()').extract_first(default="")
         # self.log(salary)
-        item["salary"] = salary.strip()
+        positionitem["salary"] = salary.strip()
 
         #: 工作地点&工作经验
         text = sel.xpath('//div[@class="location"]/text()').extract()
@@ -185,8 +186,8 @@ class NewOhrSpider(Spider):
         exp = re.sub(r'\D+', "", experience)
         if exp == "":
             exp = "0"
-        item["location"] = location
-        item["experience"] = exp
+        positionitem["location"] = location
+        positionitem["experience"] = exp
 
         #: 截止时间
         text = sel.xpath('//div[@class="posttime"]/text()').extract_first(default="")
@@ -195,44 +196,44 @@ class NewOhrSpider(Spider):
         else:
             enddate = ""
         # self.log(enddate)
-        item["enddate"] = enddate
+        positionitem["enddate"] = enddate
 
         basic_info = sel.xpath('//div[@class="basic-info info-group"]/ul/li/text()').extract()
         #: 职位类别
         try:
-            item["category"] = basic_info[0]
+            positionitem["category"] = basic_info[0]
         except Exception:
-            item["category"] = ""
+            positionitem["category"] = ""
 
         #: 工作性质
         try:
-            item["workingtime"] = basic_info[1]
+            positionitem["workingtime"] = basic_info[1]
         except Exception:
-            item["workingtime"] = ""
+            positionitem["workingtime"] = ""
 
         #: 招聘人数
         try:
-            item["hiringnumber"] = basic_info[2]
+            positionitem["hiringnumber"] = basic_info[2]
         except Exception:
-            item["hiringnumber"] = ""
+            positionitem["hiringnumber"] = ""
 
         #: 所属部门
         try:
-            item["department"] = basic_info[3]
+            positionitem["department"] = basic_info[3]
         except Exception:
-            item["department"] = ""
+            positionitem["department"] = ""
 
         #: 汇报对象
         try:
-            item["reportto"] = basic_info[4]
+            positionitem["reportto"] = basic_info[4]
         except Exception:
-            item["reportto"] = ""
+            positionitem["reportto"] = ""
 
         #: 下属人数
         try:
-            item["managecount"] = basic_info[5]
+            positionitem["managecount"] = basic_info[5]
         except Exception:
-            item["managecount"] = ""
+            positionitem["managecount"] = ""
 
         #: 岗位要求
         positiondesc = sel.xpath('//li[@class="long"]/text()').extract()
@@ -240,7 +241,7 @@ class NewOhrSpider(Spider):
         for p in positiondesc:
             desc = desc + p
         # self.log(desc)
-        item["positiondesc"] = desc
+        positionitem["positiondesc"] = desc
 
         require_label = sel.xpath('//div[@class="required-info info-group"]/ul/li/label/text()').extract()
         require_info = sel.xpath('//div[@class="required-info info-group"]/ul/li/text()').extract()
@@ -255,28 +256,28 @@ class NewOhrSpider(Spider):
             # self.log(item["sourcepositionid"]+"-"+info)
             #: 学历要求
             if label.find(u"学历要求") != -1:
-                item["degree"] = info
+                positionitem["degree"] = info
             #: 性别要求
             elif label.find(u"性别要求") != -1:
-                item["sex"] = info
+                positionitem["sex"] = info
             #: 语言要求
             elif label.find(u"语言要求") != -1:
                 #: 使用空格分隔语言和等级
                 infol = info.split("\t")
                 # self.log(infol)
-                item["language"] = infol[0]
-                item["languagelevel"] = infol[1]
+                positionitem["language"] = infol[0]
+                positionitem["languagelevel"] = infol[1]
             #: 专业要求
             elif label.find(u"专业要求") != -1:
-                item["major"] = info
+                positionitem["major"] = info
             #: 年龄要求
             elif label.find(u"年龄要求") != -1:
                 infol = re.findall(r'\d+', info)
-                item["agefrom"] = infol[0]
-                item["ageto"] = infol[1]
+                positionitem["agefrom"] = infol[0]
+                positionitem["ageto"] = infol[1]
             i += 1
         # self.log(item)
-        yield item
+        yield positionitem
 
     #: get_pageNumber(self, selector):
     #: 从返回的html中获取数据页数

@@ -23,10 +23,11 @@ from ResumeSpirit.items import PositionItem, ResumeItem
 
 
 class NewOhrSpider(Spider):
+    site_url = "http://new.o-hr.cn"
     login_url = "http://new.o-hr.cn/user/ajax/ajaxLogin"
     position_list_url = "http://new.o-hr.cn/user/job/ajaxGetJobs"
     position_detail_url_prefix = "http://new.o-hr.cn/jobs/detail/"
-    resume_list_url=""
+    resume_list_url = "http://new.o-hr.cn/user/job/ajaxGetUser"
     name = "newohr"
     allowed_domains = ["new.o-hr.cn"]
 
@@ -45,7 +46,7 @@ class NewOhrSpider(Spider):
             "password": ohr_pwd,
             "captcha": ""
         }
-        # 定义职位列表页面 POST Form Data
+        # 定义职位列表页面第一页 POST Form Data
         #: s=1:当前生效职位
         #: s=100:所有发布职位
         #: c_page:当前页
@@ -55,6 +56,18 @@ class NewOhrSpider(Spider):
             "c_page": "0",
             "t_page": "1",
         }
+        #: 构造获取简历列表第一页 post form data
+        #: jobid:职位ID
+        #: c_page:当前页
+        #: t_page:下一页页数
+        #: type:"apply"
+        self.resumelist_fromdata = {
+            "jobid": "",
+            "c_page": "0",
+            "t_page": "1",
+            "type": "apply"
+        }
+
         self.headers = {
             "Host": "new.o-hr.cn",
             "Connection": "keep-alive",
@@ -100,7 +113,7 @@ class NewOhrSpider(Spider):
     #: 处理返回的职位列表json数据
     def parse_positionlist(self, response):
         positon_data = json.loads(response.body)
-        #self.log("get position list result=" + positon_data['result'])
+        # self.log("get position list result=" + positon_data['result'])
         if positon_data['result'] == "SUCCESS":
             # self.log(positon_data["data"])
             sel = Selector(text=positon_data["data"])
@@ -112,34 +125,14 @@ class NewOhrSpider(Spider):
             for position_code in positonid_list:
                 position_data_url = self.position_detail_url_prefix + position_code
                 item = PositionItem()
+                for key in item.keys():
+                    item[key] = ""
+
                 item["sourcepositionid"] = position_code
                 item["branchid"] = self.branch_id
                 item["status"] = "1"
                 item["source"] = "OHR"
-                item["positionid"] = ""
-                item["positionname"] = ""
-                item["hiringnumber"] = ""
-                item["location"] = ""
-                item["workingtime"] = ""
-                item["degree"] = ""
-                item["sex"] = ""
-                item["language"] = ""
-                item["languagelevel"] = ""
-                item["agefrom"] = ""
-                item["ageto"] = ""
-                item["experience"] = ""
-                item["category"] = ""
-                item["major"] = ""
-                item["salary"] = ""
-                item["positiondesc"] = ""
-                item["enddate"] = ""
-                item["reportto"] = ""
-                item["managecount"] = ""
-                item["department"] = ""
-                item["sourceurl"] = ""
-                item["createdate"] = ""
-                item["updatedate"] = ""
-                item["resumes"] = []
+
                 yield FormRequest(
                     position_data_url,
                     meta={
@@ -277,7 +270,79 @@ class NewOhrSpider(Spider):
                 positionitem["ageto"] = infol[1]
             i += 1
         # self.log(item)
-        yield positionitem
+        # yield positionitem
+
+        #: 获取简历列表数据
+        position_code = positionitem["sourcepositionid"]
+        self.resumelist_fromdata["jobid"] = position_code
+        yield FormRequest(
+            self.resume_list_url,
+            meta={
+                "cookiejar": response.meta["cookiejar"],
+                "positioncode": position_code, },
+            callback=self.parse_resumelist,
+            method="POST",
+            headers=self.headers,
+            formdata=self.resumelist_fromdata,
+        )
+
+    #: parse_resumelist(self,response)
+    #: 处理返回的简历列表json数据
+    def parse_resumelist(self, response):
+        resume_data = json.loads(response.body)
+        if resume_data['result'] == "SUCCESS":
+            sel = Selector(text=resume_data["data"])
+            # self.log(resume_data["data"])
+            #: 获取简历列表页数
+            resume_page_number = self.get_pageNumber(sel)
+            #: 处理第一页的简历信息url
+            resume_url_list = sel.xpath('//a[contains(@href,"/user/resume/detail/")]/@href').extract()
+            i = 0
+            while i < len(resume_url_list):
+                resumeitem = ResumeItem()
+                for key in resumeitem.keys():
+                    resumeitem[key] = ""
+                urls = resume_url_list[i]
+                #: 处理简历详细页面url
+                resume_url = self.site_url + urls.split("'")[1]
+                #: 获取简历投递日期
+                datepath = '//table//tr[' + str(i + 2) + ']/td[6]/text()'
+                post_time = sel.xpath(datepath).extract_first()
+                resumeitem["Source"] = "OHR"
+                resumeitem["postTime"] = post_time
+                resumeitem["sourcepositionid"] = response.meta["positioncode"]
+                #: 抓取简历详细页面
+                yield FormRequest(
+                    resume_url,
+                    meta={
+                        "cookiejar": response.meta["cookiejar"],
+                        "resume_item": resumeitem,
+                    },
+                    callback=self.parse_resumedata,
+                    headers=self.headers,
+                )
+                i += 1
+                #: 处理下一页数据
+                if resume_page_number > 1:
+                    for cpage in range(1, resume_page_number):
+                        self.resumelist_fromdata["c_page"] = str(cpage)
+                        self.resumelist_fromdata["t_page"] = str(cpage + 1)
+                        self.resumelist_fromdata["jobid"] = response.meta["positioncode"]
+                        yield FormRequest(
+                            self.resume_list_url,
+                            meta={
+                                "cookiejar": response.meta["cookiejar"],
+                                "positioncode": self.resumelist_fromdata["jobid"], },
+                            callback=self.parse_resumelist,
+                            method="POST",
+                            headers=self.headers,
+                            formdata=self.resumelist_fromdata,
+                        )
+
+    #: parse_resumedata(self,response)
+    #: 处理简历详细页面
+    def parse_resumedata(self, response):
+        pass
 
     #: get_pageNumber(self, selector):
     #: 从返回的html中获取数据页数
@@ -285,7 +350,7 @@ class NewOhrSpider(Spider):
     #: selector:Selector实例
     def get_pageNumber(self, selector):
         try:
-            page_num_str = selector.xpath('//a[@class="mr10 ls1"]/value()').re(r'\d+')[0]
+            page_num_str = selector.xpath('//a[@class="mr10 ls1"]/text()').re(r'\d+')[0]
             page_num = int(page_num_str)
         except Exception:
             page_num = -1

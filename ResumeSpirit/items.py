@@ -78,6 +78,7 @@ class ResumeItem(scrapy.Item):
     postTime = scrapy.Field()
     Source = scrapy.Field()
     sourceresumeID = scrapy.Field()
+    sourcepositionid = scrapy.Field()
     sourceurl = scrapy.Field()
     Status = scrapy.Field()
     CreateDate = scrapy.Field()

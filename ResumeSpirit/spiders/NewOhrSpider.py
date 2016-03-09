@@ -414,7 +414,7 @@ class NewOhrSpider(Spider):
         # 表格第6行
         # 地址
         address = sel.xpath('//div[@id="p_info_view"]/table/tbody/tr[6]/td[2]/text()').extract_first(default="")
-        #self.log(address)
+        # self.log(address)
         resume_item["address"] = address
 
         # 表格第7行
@@ -446,10 +446,53 @@ class NewOhrSpider(Spider):
         # 表格第10行
         # 海外经历
         overseadesc = sel.xpath('//div[@id="p_info_view"]/table/tbody/tr[10]/td[2]/text()').extract_first(
-                default="")
+            default="")
         # self.log(overseadesc)
         resume_item["overseadesc"] = overseadesc
         # 基本资料 end
+
+        # 求职意向 begin
+        # 表格第1行
+        # 到岗时间
+        avaliableTime = sel.xpath('//div[@id="p_want_view"]/table/tbody/tr[1]/td[2]/text()').extract_first(
+            default="")
+        # self.log(avaliableTime)
+        resume_item["avaliableTime"] = avaliableTime
+
+        # 表格第2行
+        # 工作性质
+        jobTime = sel.xpath('//div[@id="p_want_view"]/table/tbody/tr[2]/td[2]/text()').extract_first(
+            default="")
+        # self.log(jobTime)
+        resume_item["jobTime"] = jobTime
+
+        # 表格第3行
+        # 期望行业
+        expectIndustry = sel.xpath('//div[@id="p_want_view"]/table/tbody/tr[3]/td[2]/text()').extract_first(
+            default="")
+        # self.log(expectIndustry)
+        resume_item["expectIndustry"] = expectIndustry
+
+        # 表格第4行
+        # 期望年薪
+        expectSalary = sel.xpath('//div[@id="p_want_view"]/table/tbody/tr[4]/td[2]/text()').extract_first(
+            default="")
+        # self.log(expectSalary)
+        resume_item["expectSalary"] = expectSalary
+
+        # 表格第5行
+        # 目标职能
+        category = sel.xpath('//div[@id="p_want_view"]/table/tbody/tr[5]/td[2]/text()').extract_first(
+            default="")
+        # self.log(category)
+        resume_item["category"] = category
+        # 求职意向 end
+
+        # 教育背景 begin
+        edu = sel.xpath('//div[@id="p_edu1_view"]/div[@').extract_first(
+            default="")
+        self.log(edu)
+        # 教育背景 end
 
         # self.log(resume_item)
 

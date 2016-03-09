@@ -305,6 +305,7 @@ class NewOhrSpider(Spider):
                 urls = resume_url_list[i]
                 #: 处理简历详细页面url
                 resume_url = self.site_url + urls.split("'")[1]
+                self.log(resume_url)
                 #: 获取简历投递日期
                 datepath = '//table//tr[' + str(i + 2) + ']/td[6]/text()'
                 post_time = sel.xpath(datepath).extract_first()
@@ -323,26 +324,26 @@ class NewOhrSpider(Spider):
                 )
                 i += 1
                 #: 处理下一页数据
-                if resume_page_number > 1:
-                    for cpage in range(1, resume_page_number):
-                        self.resumelist_fromdata["c_page"] = str(cpage)
-                        self.resumelist_fromdata["t_page"] = str(cpage + 1)
-                        self.resumelist_fromdata["jobid"] = response.meta["positioncode"]
-                        yield FormRequest(
-                            self.resume_list_url,
-                            meta={
-                                "cookiejar": response.meta["cookiejar"],
-                                "positioncode": self.resumelist_fromdata["jobid"], },
-                            callback=self.parse_resumelist,
-                            method="POST",
-                            headers=self.headers,
-                            formdata=self.resumelist_fromdata,
-                        )
+            if resume_page_number > 1:
+                for cpage in range(1, resume_page_number):
+                    self.resumelist_fromdata["c_page"] = str(cpage)
+                    self.resumelist_fromdata["t_page"] = str(cpage + 1)
+                    self.resumelist_fromdata["jobid"] = response.meta["positioncode"]
+                    yield FormRequest(
+                        self.resume_list_url,
+                        meta={
+                            "cookiejar": response.meta["cookiejar"],
+                            "positioncode": self.resumelist_fromdata["jobid"], },
+                        callback=self.parse_resumelist,
+                        method="POST",
+                        headers=self.headers,
+                        formdata=self.resumelist_fromdata,
+                    )
 
     #: parse_resumedata(self,response)
     #: 处理简历详细页面
     def parse_resumedata(self, response):
-        pass
+        resume_item=response.meta["resume_item"]
 
     #: get_pageNumber(self, selector):
     #: 从返回的html中获取数据页数

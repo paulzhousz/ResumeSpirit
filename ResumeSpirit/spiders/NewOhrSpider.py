@@ -489,11 +489,16 @@ class NewOhrSpider(Spider):
         # 求职意向 end
 
         # 教育背景 begin
-        edu = sel.xpath('//div[@id="p_edu1_view"]/div[@').extract_first(
-            default="")
-        self.log(edu)
+        schoollist = sel.xpath('//dt[@class="school_nav"]/span/text()').extract()
+        for i 
+        s1=sel.xpath('//div[@id="p_edu1_view"]/dl/div[3]/div/text()').extract()
+        # //*[@id="p_edu1_view"]/dl/dt/span 学校名称
+        # //*[@id="p_edu1_view"]/dl/dt/text() 时间
+        # //*[@id="p_edu1_view"]/dl/div[1]/span 学历
+        # //*[@id="p_edu1_view"]/dl/div[2]/span 专业
+        # //*[@id="p_edu1_view"]/dl/div[3]/div 描述
+        self.log(schoollist)
         # 教育背景 end
-
         # self.log(resume_item)
 
     #: get_pageNumber(self, selector):

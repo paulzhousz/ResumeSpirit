@@ -74,7 +74,7 @@ class ResumeItem(scrapy.Item):
     eduinfo = scrapy.Field()
     traininginfo = scrapy.Field()
     workexpinfo = scrapy.Field()
-    projectinfo = scrapy.Field()
+    projectexpinfo = scrapy.Field()
     englishLevel = scrapy.Field()
     japaneselevel = scrapy.Field()
     selfEvaluation = scrapy.Field()

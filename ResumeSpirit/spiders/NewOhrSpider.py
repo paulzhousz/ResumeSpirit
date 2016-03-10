@@ -488,18 +488,79 @@ class NewOhrSpider(Spider):
         resume_item["category"] = category
         # 求职意向 end
 
-        # 教育背景 begin
-        schoollist = sel.xpath('//dt[@class="school_nav"]/span/text()').extract()
-        for i 
-        s1=sel.xpath('//div[@id="p_edu1_view"]/dl/div[3]/div/text()').extract()
-        # //*[@id="p_edu1_view"]/dl/dt/span 学校名称
-        # //*[@id="p_edu1_view"]/dl/dt/text() 时间
-        # //*[@id="p_edu1_view"]/dl/div[1]/span 学历
-        # //*[@id="p_edu1_view"]/dl/div[2]/span 专业
-        # //*[@id="p_edu1_view"]/dl/div[3]/div 描述
-        self.log(schoollist)
-        # 教育背景 end
-        # self.log(resume_item)
+        titlelist = sel.xpath('//div[@class="title"]/b/text()').extract()
+        #: 如果简历中包含教育背景
+        if titlelist.count(u'教育背景') > 0:
+            # 教育背景 begin
+            schoollist = sel.xpath('//div[contains(@id,"p_edu")]/dl/dt/span/text()').extract()
+            edulist = []
+            for index in range(len(schoollist)):
+                xpath_prefix = '//div[@id="p_edu' + str(index + 1) + '_view"]/dl/'
+                edudict = {
+                    'seq': index + 1,
+                    'schoolname': sel.xpath(xpath_prefix + 'dt/span/text()').extract_first(default=""),
+                    'time': sel.xpath(xpath_prefix + 'dt/text()').extract_first(default=""),
+                    'degree': sel.xpath(xpath_prefix + 'div[1]/span/text()').extract_first(default=""),
+                    'major': sel.xpath(xpath_prefix + 'div[2]/span/text()').extract_first(default=""),
+                    'desc': sel.xpath(xpath_prefix + 'div[3]/div/text()').extract_first(default="")}
+                edulist.append(edudict)
+                # //*[@id="p_edu1_view"]/dl/dt/span 学校名称
+                # //*[@id="p_edu1_view"]/dl/dt/text() 时间
+                # //*[@id="p_edu1_view"]/dl/div[1]/span 学历
+                # //*[@id="p_edu1_view"]/dl/div[2]/span 专业
+                # //*[@id="p_edu1_view"]/dl/div[3]/div 描述
+            eduinfo = json.dumps(edulist,ensure_ascii=False)
+            # self.log(eduinfo)
+            resume_item["eduinfo"] = eduinfo
+            # 教育背景 end
+
+        #: 如果简历中包含培训经历
+        if titlelist.count(u'培训经历') > 0:
+            # 培训经历 begin
+            schoollist = sel.xpath('//div[contains(@id,"p_train")]/dl/dt/span/text()').extract()
+            trainlist = []
+            for index in range(len(schoollist)):
+                xpath_prefix = '//div[@id="p_train' + str(index + 1) + '_view"]/dl/'
+                traindict = {
+                    'seq': index + 1,
+                    'schoolname': sel.xpath(xpath_prefix + 'dt/span/text()').extract_first(default=""),
+                    'time': sel.xpath(xpath_prefix + 'dt/text()').extract_first(default=""),
+                    'desc': sel.xpath(xpath_prefix + 'div/div/text()').extract_first(default="")}
+                trainlist.append(traindict)
+                # //*[@id="p_train1_view"]/dl/dt/span 培训机构名称
+                # //*[@id="p_train1_view"]/dl/dt/text() 时间
+                # //*[@id="p_train1_view"]/dl/div/div 描述
+            traininginfo = json.dumps(trainlist,ensure_ascii=False)
+            # self.log(eduinfo)
+            resume_item["traininginfo"] = traininginfo
+            # 培训经历 end
+
+        #: 如果简历中包含工作经验
+        if titlelist.count(u'工作经验') > 0:
+            # 工作经验 begin
+            companylist = sel.xpath('//div[@class="company_name"]/@title').extract()
+            workexplist = []
+            for index in range(len(companylist)):
+                xpath_prefix = '//div[@id="p_work' + str(index + 1) + '_view"]/div/'
+                s1=sel.xpath(xpath_prefix + 'div[1]/time/text()').extract_first(default=""),
+
+                workexpdict = {
+                    'seq': index + 1,
+                    'companyname': sel.xpath(xpath_prefix + 'dt/span/text()').extract_first(default=""),
+                    'time': sel.xpath(xpath_prefix + 'dt/text()').extract_first(default=""),
+                    'desc': sel.xpath(xpath_prefix + 'div/div/text()').extract_first(default="")}
+                workexplist.append(workexpdict)
+                # //*[@id="p_work1_view"]/div/div[1]/time/text() 时间+公司
+                # //*[@id="p_work1_view"]/div/div[2]/div/div[1] 所属行业
+                # //*[@id="p_work1_view"]/div/div[2]/div/div[2] 所属部门
+                # //*[@id="p_work1_view"]/div/div[2]/div/div[3] 职位
+                # //*[@id="p_work1_view"]/div/div[2]/div/div[4]/div/div 描述
+            workexpinfo = json.dumps(workexplist,ensure_ascii=False)
+            # self.log(workexpinfo)
+            resume_item["workexpinfo"] = workexpinfo
+            # 工作经验 end
+
+            # self.log(resume_item)
 
     #: get_pageNumber(self, selector):
     #: 从返回的html中获取数据页数

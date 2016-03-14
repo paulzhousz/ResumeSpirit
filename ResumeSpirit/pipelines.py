@@ -19,6 +19,8 @@ from items import ResumeItem, PositionItem
 class ResumespiritPipeline(object):
     def open_spider(self, spider):
         self.session = config.db_session()
+        self.relationlist = []
+        self.resumecount = 0
 
     def process_item(self, item, spider):
         # logging.info(item.__dict__)
@@ -64,8 +66,10 @@ class ResumespiritPipeline(object):
                 self.session.commit()
             except Exception:
                 logging.error(u"insert position data to database failed!")
+                logging.error(Exception.message)
         # 处理简历数据
         if isinstance(item, ResumeItem):
+            self.resumecount += 1
             resume_entity = ResumeInfo()
             try:
                 resume_entity.cname = item["cname"]
@@ -124,34 +128,42 @@ class ResumespiritPipeline(object):
                 self.session.commit()
 
                 # 处理职位简历关联关系
-                try:
-                    sourcesite = item["source"]
-                    positioncode = item["sourcepositionid"]
-                    position = self.session.query(PositionInfo).filter(
-                        and_(PositionInfo.source == sourcesite,
-                             PositionInfo.sourcepositionid == positioncode
-                             )).first()
-                    if position:
-                        relation = self.session.query(PositionResume).filter(
-                            and_(PositionResume.positionid == position.positionID,
-                                 PositionResume.resumeid == resume_entity.resumeid
-                                 )).first()
-                        if not relation:
-                            relation_entity = PositionResume()
-                            relation_entity.id = str(uuid.uuid1())
-                            relation_entity.positionid = position.positionID
-                            relation_entity.resumeid = resume_entity.resumeid
-                            relation_entity.createdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                            relation_entity.updatedate = relation_entity.createdate
-                            self.session.add(relation_entity)
-                            self.session.commit()
-                    else:
-                        logging.warning("Can't find position data:" + positioncode)
-                except Exception:
-                    raise Exception("insert position-resume relation data to database failed!")
+                relationentity = dict(resumeid=resume_entity.resumeid, sourcesite=item["source"],
+                                      positioncode=item["sourcepositionid"])
+                self.relationlist.append(relationentity)
             except Exception:
                 logging.error(Exception.message)
+                logging.error(resume_entity)
         return item
 
     def close_spider(self, spider):
+        # 处理职位简历关联关系
+        for r in self.relationlist:
+            try:
+                resumeid = r["resumeid"]
+                sourcesite = r["sourcesite"]
+                positioncode = r["positioncode"]
+                position = self.session.query(PositionInfo).filter(
+                    and_(PositionInfo.source == sourcesite,
+                         PositionInfo.sourcepositionid == positioncode
+                         )).first()
+                if position:
+                    relation = self.session.query(PositionResume).filter(
+                        and_(PositionResume.positionid == position.positionID,
+                             PositionResume.resumeid == resumeid
+                             )).first()
+                    if not relation:
+                        relation_entity = PositionResume()
+                        relation_entity.id = str(uuid.uuid1())
+                        relation_entity.positionid = position.positionID
+                        relation_entity.resumeid = resumeid
+                        relation_entity.createdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        relation_entity.updatedate = relation_entity.createdate
+                        self.session.add(relation_entity)
+                        self.session.commit()
+                else:
+                    logging.warning("Can't find position data:" + positioncode)
+            except Exception:
+                raise Exception("insert position-resume relation data to database failed!")
+        logging.error("resumeid count"+str(self.resumecount))
         self.session.close()

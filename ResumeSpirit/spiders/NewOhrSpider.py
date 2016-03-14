@@ -238,6 +238,13 @@ class NewOhrSpider(Spider):
 
         require_label = sel.xpath('//div[@class="required-info info-group"]/ul/li/label/text()').extract()
         require_info = sel.xpath('//div[@class="required-info info-group"]/ul/li/text()').extract()
+        positionitem["degree"] = ""
+        positionitem["sex"] = ""
+        positionitem["language"] = ""
+        positionitem["languagelevel"] = ""
+        positionitem["major"] = ""
+        positionitem["agefrom"] = ""
+        positionitem["ageto"] = ""
         # self.log(item["sourcepositionid"])
         # self.log(require_label)
         # self.log(require_info)
@@ -497,19 +504,21 @@ class NewOhrSpider(Spider):
             edulist = []
             for index in range(len(schoollist)):
                 xpath_prefix = '//div[@id="p_edu' + str(index + 1) + '_view"]/dl/'
-                edudict = {
-                    'seq': index + 1,
-                    'schoolname': sel.xpath(xpath_prefix + 'dt/span/text()').extract_first(default=""),
-                    'time': sel.xpath(xpath_prefix + 'dt/text()').extract_first(default=""),
-                    'degree': sel.xpath(xpath_prefix + 'div[1]/span/text()').extract_first(default=""),
-                    'major': sel.xpath(xpath_prefix + 'div[2]/span/text()').extract_first(default=""),
-                    'desc': sel.xpath(xpath_prefix + 'div[3]/div/text()').extract_first(default="")}
-                edulist.append(edudict)
-                # //*[@id="p_edu1_view"]/dl/dt/span 学校名称
-                # //*[@id="p_edu1_view"]/dl/dt/text() 时间
-                # //*[@id="p_edu1_view"]/dl/div[1]/span 学历
-                # //*[@id="p_edu1_view"]/dl/div[2]/span 专业
-                # //*[@id="p_edu1_view"]/dl/div[3]/div 描述
+                schoolname = sel.xpath(xpath_prefix + 'dt/span/text()').extract()
+                if schoolname:
+                    edudict = {
+                        'seq': index + 1,
+                        'schoolname': sel.xpath(xpath_prefix + 'dt/span/text()').extract_first(default=""),
+                        'time': sel.xpath(xpath_prefix + 'dt/text()').extract_first(default=""),
+                        'degree': sel.xpath(xpath_prefix + 'div[1]/span/text()').extract_first(default=""),
+                        'major': sel.xpath(xpath_prefix + 'div[2]/span/text()').extract_first(default=""),
+                        'desc': sel.xpath(xpath_prefix + 'div[3]/div/text()').extract_first(default="")}
+                    edulist.append(edudict)
+                    # //*[@id="p_edu1_view"]/dl/dt/span 学校名称
+                    # //*[@id="p_edu1_view"]/dl/dt/text() 时间
+                    # //*[@id="p_edu1_view"]/dl/div[1]/span 学历
+                    # //*[@id="p_edu1_view"]/dl/div[2]/span 专业
+                    # //*[@id="p_edu1_view"]/dl/div[3]/div 描述
             eduinfo = json.dumps(edulist, ensure_ascii=False)
             # self.log(eduinfo)
         resume_item["eduinfo"] = eduinfo
@@ -523,15 +532,17 @@ class NewOhrSpider(Spider):
             trainlist = []
             for index in range(len(schoollist)):
                 xpath_prefix = '//div[@id="p_train' + str(index + 1) + '_view"]/dl/'
-                traindict = {
-                    'seq': index + 1,
-                    'schoolname': sel.xpath(xpath_prefix + 'dt/span/text()').extract_first(default=""),
-                    'time': sel.xpath(xpath_prefix + 'dt/text()').extract_first(default=""),
-                    'desc': sel.xpath(xpath_prefix + 'div/div/text()').extract_first(default="")}
-                trainlist.append(traindict)
-                # //*[@id="p_train1_view"]/dl/dt/span 培训机构名称
-                # //*[@id="p_train1_view"]/dl/dt/text() 时间
-                # //*[@id="p_train1_view"]/dl/div/div 描述
+                trainername = sel.xpath(xpath_prefix + 'dt/span/text()').extract()
+                if trainername:
+                    traindict = {
+                        'seq': index + 1,
+                        'schoolname': sel.xpath(xpath_prefix + 'dt/span/text()').extract_first(default=""),
+                        'time': sel.xpath(xpath_prefix + 'dt/text()').extract_first(default=""),
+                        'desc': sel.xpath(xpath_prefix + 'div/div/text()').extract_first(default="")}
+                    trainlist.append(traindict)
+                    # //*[@id="p_train1_view"]/dl/dt/span 培训机构名称
+                    # //*[@id="p_train1_view"]/dl/dt/text() 时间
+                    # //*[@id="p_train1_view"]/dl/div/div 描述
             traininginfo = json.dumps(trainlist, ensure_ascii=False)
             # self.log(eduinfo)
         resume_item["traininginfo"] = traininginfo
@@ -547,28 +558,30 @@ class NewOhrSpider(Spider):
             for index in range(len(companylist)):
                 xpath_prefix = '//div[@id="p_work' + str(index + 1) + '_view"]/div/'
                 list1 = sel.xpath(xpath_prefix + 'div[1]/time/text()').extract_first(default="").split()
-                workexpdict = {
-                    'seq': index + 1,
-                    'time': list1[0],
-                    'companyname': list1[1],
-                    # 中文：分隔
-                    'department':
-                        sel.xpath(xpath_prefix + 'div[2]/div/div[2]/text()').extract_first(default="").split(u'：')[
-                            1].replace('\t', ''),
-                    'position':
-                        sel.xpath(xpath_prefix + 'div[2]/div/div[3]/text()').extract_first(default="").split(u'：')[
-                            1].replace('\t', ''),
-                    'industry':
-                        sel.xpath(xpath_prefix + 'div[2]/div/div[1]/text()').extract_first(default="").split(u'：')[
-                            1].replace('\t', ''),
-                    'desc': sel.xpath(xpath_prefix + 'div[2]/div/div[4]/div/div/text()').extract_first(
-                        default="").replace('\t', ''), }
-                workexplist.append(workexpdict)
-                # //*[@id="p_work1_view"]/div/div[1]/time/text() 时间+公司
-                # //*[@id="p_work1_view"]/div/div[2]/div/div[1] 所属行业
-                # //*[@id="p_work1_view"]/div/div[2]/div/div[2] 所属部门
-                # //*[@id="p_work1_view"]/div/div[2]/div/div[3] 职位
-                # //*[@id="p_work1_view"]/div/div[2]/div/div[4]/div/div 描述
+                if list1:
+                    self.log(list1)
+                    workexpdict = {
+                        'seq': index + 1,
+                        'time': list1[0],
+                        'companyname': list1[1],
+                        # 中文：分隔
+                        'department':
+                            sel.xpath(xpath_prefix + 'div[2]/div/div[2]/text()').extract_first(default="").split(u'：')[
+                                1].replace('\t', ''),
+                        'position':
+                            sel.xpath(xpath_prefix + 'div[2]/div/div[3]/text()').extract_first(default="").split(u'：')[
+                                1].replace('\t', ''),
+                        'industry':
+                            sel.xpath(xpath_prefix + 'div[2]/div/div[1]/text()').extract_first(default="").split(u'：')[
+                                1].replace('\t', ''),
+                        'desc': sel.xpath(xpath_prefix + 'div[2]/div/div[4]/div/div/text()').extract_first(
+                            default="").replace('\t', ''), }
+                    workexplist.append(workexpdict)
+                    # //*[@id="p_work1_view"]/div/div[1]/time/text() 时间+公司
+                    # //*[@id="p_work1_view"]/div/div[2]/div/div[1] 所属行业
+                    # //*[@id="p_work1_view"]/div/div[2]/div/div[2] 所属部门
+                    # //*[@id="p_work1_view"]/div/div[2]/div/div[3] 职位
+                    # //*[@id="p_work1_view"]/div/div[2]/div/div[4]/div/div 描述
             workexpinfo = json.dumps(workexplist, ensure_ascii=False)
             # self.log(workexpinfo)
         resume_item["workexpinfo"] = workexpinfo
@@ -584,30 +597,30 @@ class NewOhrSpider(Spider):
             for index in range(len(companylist)):
                 xpath_prefix = '//div[@id="p_project' + str(index + 1) + '_view"]/div/'
                 list1 = sel.xpath(xpath_prefix + 'div[1]/time/text()').extract_first(default="").split()
-                # s1=sel.xpath(xpath_prefix + 'div[2]/div/div[1]/text()').extract_first(default="").split(u':')
-                projectexpdict = {
-                    'seq': index + 1,
-                    'time': list1[0],
-                    'companyname': list1[1],
-                    # 中文：分隔
-                    'department':
-                        sel.xpath(xpath_prefix + 'div[2]/div/div[2]/text()').extract_first(default="").split(u'：')[
-                            1].replace('\t', ''),
-                    'position':
-                        sel.xpath(xpath_prefix + 'div[2]/div/div[3]/text()').extract_first(default="").split(u'：')[
-                            1].replace('\t', ''),
-                    # 英文:分隔
-                    'industry':
-                        sel.xpath(xpath_prefix + 'div[2]/div/div[1]/text()').extract_first(default="").split(u':')[
-                            1].replace('\t', ''),
-                    'desc': sel.xpath(xpath_prefix + 'div[2]/div/div[4]/div/div/text()').extract_first(
-                        default="").replace('\t', ''), }
-                projectexplist.append(projectexpdict)
-                # //*[@id="p_project1_view"]/div/div[1]/time/text() 时间+公司
-                # //*[@id="p_project1_view"]/div/div[2]/div/div[1] 所属行业
-                # //*[@id="p_project1_view"]/div/div[2]/div/div[2] 所属部门
-                # //*[@id="p_project1_view"]/div/div[2]/div/div[3] 职位
-                # //*[@id="p_project1_view"]/div/div[2]/div/div[4]/div/div 描述
+                if list1:
+                    projectexpdict = {
+                        'seq': index + 1,
+                        'time': list1[0],
+                        'companyname': list1[1],
+                        # 中文：分隔
+                        'department':
+                            sel.xpath(xpath_prefix + 'div[2]/div/div[2]/text()').extract_first(default="").split(u'：')[
+                                1].replace('\t', ''),
+                        'position':
+                            sel.xpath(xpath_prefix + 'div[2]/div/div[3]/text()').extract_first(default="").split(u'：')[
+                                1].replace('\t', ''),
+                        # 英文:分隔
+                        'industry':
+                            sel.xpath(xpath_prefix + 'div[2]/div/div[1]/text()').extract_first(default="").split(u':')[
+                                1].replace('\t', ''),
+                        'desc': sel.xpath(xpath_prefix + 'div[2]/div/div[4]/div/div/text()').extract_first(
+                            default="").replace('\t', ''), }
+                    projectexplist.append(projectexpdict)
+                    # //*[@id="p_project1_view"]/div/div[1]/time/text() 时间+公司
+                    # //*[@id="p_project1_view"]/div/div[2]/div/div[1] 所属行业
+                    # //*[@id="p_project1_view"]/div/div[2]/div/div[2] 所属部门
+                    # //*[@id="p_project1_view"]/div/div[2]/div/div[3] 职位
+                    # //*[@id="p_project1_view"]/div/div[2]/div/div[4]/div/div 描述
             projectexpinfo = json.dumps(projectexplist, ensure_ascii=False)
             # self.log(workexpinfo)
         resume_item["projectexpinfo"] = projectexpinfo

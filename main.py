@@ -4,4 +4,5 @@ __author__ = 'Paul'
 
 from scrapy import cmdline
 
-cmdline.execute("scrapy crawl newohr --logfile=ohr.log".split())
+cmdline.execute("scrapy crawl newohr".split())
+# --logfile=ohr.log --loglevel=ERROR
